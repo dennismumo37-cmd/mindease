@@ -24,12 +24,10 @@ const RESPONSE_POOLS = {
   ]
 };
 
-// Tracks recently used indexes to prevent immediate duplicate replies
 const lastUsedIndexes = {};
 
 function getRandomResponse(array, categoryKey) {
   if (array.length === 1) return array[0];
-  
   let randomIndex;
   do {
     randomIndex = Math.floor(Math.random() * array.length);
@@ -41,18 +39,57 @@ function getRandomResponse(array, categoryKey) {
 
 function generateEmpathyResponse(input) {
   const lower = input.toLowerCase();
-
   if (["exam", "study", "fail", "school", "assignment", "test", "homework"].some(w => lower.includes(w))) {
     return getRandomResponse(RESPONSE_POOLS.academic, "academic");
   }
-
   if (["work", "boss", "job", "burnout", "career", "office"].some(w => lower.includes(w))) {
     return getRandomResponse(RESPONSE_POOLS.work, "work");
   }
-
   if (["read", "notes", "book", "chapter", "start", "clean", "write"].some(w => lower.includes(w))) {
     return getRandomResponse(RESPONSE_POOLS.actionable, "actionable");
   }
-
   return getRandomResponse(RESPONSE_POOLS.general, "general");
+}
+
+// UI Send Message Handler
+function sendMessage() {
+  const inputEl = document.getElementById("userInput");
+  const chatBox = document.getElementById("chatBox");
+  const messageText = inputEl.value.trim();
+
+  if (!messageText) return;
+
+  // Display User Message
+  const userMsgDiv = document.createElement("div");
+  userMsgDiv.className = "message user-msg";
+  userMsgDiv.textContent = messageText;
+  chatBox.appendChild(userMsgDiv);
+
+  inputEl.value = "";
+
+  // Check for Crisis Keywords First
+  if (typeof checkCrisisKeywords === "function" && checkCrisisKeywords(messageText)) {
+    return;
+  }
+
+  // Generate & Display Bot Response
+  setTimeout(() => {
+    const botMsgDiv = document.createElement("div");
+    botMsgDiv.className = "message bot-msg";
+    botMsgDiv.textContent = generateEmpathyResponse(messageText);
+    chatBox.appendChild(botMsgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }, 500);
+}
+
+// UI Mood Tracker Handler
+function saveMood() {
+  const score = document.getElementById("moodScore").value;
+  const resultEl = document.getElementById("moodLogResult");
+  
+  const history = JSON.parse(localStorage.getItem("mindease_moods") || "[]");
+  history.push({ score: score, date: new Date().toISOString() });
+  localStorage.setItem("mindease_moods", JSON.stringify(history));
+
+  resultEl.textContent = `Logged mood score: ${score}/10! Saved successfully.`;
 }
